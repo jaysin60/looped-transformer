@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "looped-transformer"
+version = "0.1.0"
+description = "Small-scale upcycling of a pretrained coding LM into a looped (latent-recurrent) transformer."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "jaysin60" }]
+keywords = ["looped-transformer", "latent-reasoning", "ngpt", "llm", "pytorch"]
+dependencies = [
+  "torch>=2.8",
+  "transformers>=5.0",
+  "datasets>=3.0",
+  "accelerate>=1.0",
+  "safetensors>=0.4",
+  "sentencepiece>=0.2",
+  "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+tracking = ["wandb>=0.17", "matplotlib>=3.8"]
+
+[tool.setuptools]
+packages = ["looped"]

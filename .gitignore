@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+.venv/
+.venv-*/
+
+# Generated data / checkpoints (rebuild with data/build_mix.py)
+data/packed*/
+data/*.jsonl
+runs/
+wandb/
+*.safetensors
+*.pt
+*.bin
+*.npy
+
+# Unrelated / large inputs
+*.pdf
+Copy_of_Qwopus3_5_27b_Colab.ipynb
+
+# OS / editor
+.DS_Store
+.ipynb_checkpoints/
+.vscode/
+.idea/
