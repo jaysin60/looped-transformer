@@ -1,0 +1,36 @@
+<svg viewBox="0 0 420 730" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" width="420" height="730">
+  <title id="title">Standard Transformer</title>
+  <desc id="desc">Read bottom to top. Input tokens are embedded, pass through 28 distinct decoder layers once, then through RMSNorm and the language-model head to produce logits.</desc>
+  <!-- Visual language adapted from arjun kocher, https://www.k-a.in/loop-transformer.html (CC BY 4.0). Redrawn for this repository. -->
+  <defs>
+    <pattern id="dots" width="29" height="29" patternUnits="userSpaceOnUse"><path d="M29 0H0V29" fill="none" stroke="#cbd5e1" stroke-width=".7" opacity=".55"/></pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#344054"/></marker>
+  </defs>
+  <style>
+    text{font-family:"IBM Plex Sans","Avenir Next","Trebuchet MS",Arial,sans-serif;fill:#24324a;text-anchor:middle}
+    .box{fill:#ffffff;stroke:#a6b3c5;stroke-width:2}
+    .panel{fill:#edf1f7;stroke:#98a5b8;stroke-width:2}
+    .norm{fill:#e2f2f7;stroke:#7bb8c7;stroke-width:2}
+    .conn{fill:none;stroke:#344054;stroke-width:2;marker-end:url(#arrow)}
+    .label{font-size:16px}.small{font-size:13px;fill:#667085}.italic{font-style:italic}.bold{font-weight:600}
+  </style>
+  <rect width="420" height="730" fill="#f5f7fb"/><rect width="420" height="730" fill="url(#dots)"/>
+  <text x="180" y="27" class="label italic">next-token logits</text>
+  <path class="conn" d="M180 52V38"/>
+  <rect class="box" x="105" y="52" width="150" height="34" rx="5"/><text x="180" y="74" class="label">lm_head</text>
+  <path class="conn" d="M180 110V88"/>
+  <rect class="norm" x="105" y="110" width="150" height="34" rx="5"/><text x="180" y="132" class="label">RMSNorm</text>
+  <path class="conn" d="M180 182V146"/>
+  <rect class="panel" x="60" y="182" width="240" height="326" rx="12"/>
+  <text x="180" y="209" class="label bold">28 decoder layers</text>
+  <text x="180" y="230" class="small italic">distinct weights · run once</text>
+  <rect class="box" x="95" y="252" width="170" height="43" rx="6"/><text x="180" y="279" class="label">layer 28</text>
+  <text x="180" y="326" font-size="25">⋮</text>
+  <rect class="box" x="95" y="346" width="170" height="43" rx="6"/><text x="180" y="373" class="label">layer 2</text>
+  <path class="conn" d="M180 424V391"/>
+  <rect class="box" x="95" y="424" width="170" height="43" rx="6"/><text x="180" y="451" class="label">layer 1</text>
+  <path class="conn" d="M180 632V510"/>
+  <rect class="box" x="105" y="632" width="150" height="30" rx="5"/><text x="180" y="652" class="label">Embedding</text>
+  <path class="conn" d="M180 694V664"/>
+  <text x="180" y="716" class="label italic">input tokens</text>
+</svg>

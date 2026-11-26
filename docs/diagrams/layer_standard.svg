@@ -1,0 +1,41 @@
+<svg viewBox="0 0 460 570" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" width="460" height="570">
+  <title id="title">Inside one decoder layer</title>
+  <desc id="desc">Read bottom to top. This is an ordinary pre-norm transformer decoder layer. RMSNorm and causal self-attention are followed by a residual add, then RMSNorm and a SwiGLU MLP are followed by another residual add. Reusing this layer does not change these internal operations.</desc>
+  <!-- Visual language adapted from arjun kocher, https://www.k-a.in/loop-transformer.html (CC BY 4.0). Redrawn for this repository. -->
+  <defs>
+    <pattern id="dots" width="29" height="29" patternUnits="userSpaceOnUse"><path d="M29 0H0V29" fill="none" stroke="#cbd5e1" stroke-width=".7" opacity=".55"/></pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#344054"/></marker>
+    <marker id="arrowMuted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#8996aa"/></marker>
+  </defs>
+  <style>
+    text{font-family:"IBM Plex Sans","Avenir Next","Trebuchet MS",Arial,sans-serif;fill:#24324a;text-anchor:middle}
+    .norm{fill:#e2f2f7;stroke:#7bb8c7;stroke-width:2}.attn{fill:#e9e7ff;stroke:#a99eea;stroke-width:2}.mlp{fill:#fff0df;stroke:#dfa36b;stroke-width:2}
+    .add{fill:#e2f2f7;stroke:#7bb8c7;stroke-width:2}.conn{fill:none;stroke:#344054;stroke-width:2;marker-end:url(#arrow)}
+    .skip{fill:none;stroke:#8996aa;stroke-width:1.7;marker-end:url(#arrowMuted)}
+    .label{font-size:16px}.small{font-size:12px;fill:#667085}.italic{font-style:italic}.mono{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+  </style>
+  <rect width="460" height="570" fill="#f5f7fb"/><rect width="460" height="570" fill="url(#dots)"/>
+  <text x="230" y="28" class="label italic">layer output x′</text>
+  <circle class="add" cx="230" cy="70" r="15"/><text x="230" y="76" font-size="20">+</text>
+  <path class="conn" d="M230 55V39"/>
+  <rect class="mlp" x="125" y="120" width="210" height="62" rx="7"/><text x="230" y="145" class="label">MLP · SwiGLU</text><text x="230" y="166" class="small">position-wise feed-forward</text>
+  <path class="conn" d="M230 120V87"/>
+  <rect class="norm" x="125" y="216" width="210" height="34" rx="5"/><text x="230" y="238" class="label">RMSNorm</text>
+  <path class="conn" d="M230 216V184"/>
+  <circle class="add" cx="230" cy="291" r="15"/><text x="230" y="297" font-size="20">+</text>
+  <path class="conn" d="M230 276V252"/>
+  <rect class="attn" x="125" y="341" width="210" height="62" rx="7"/><text x="230" y="365" class="label">Causal self-attention</text><text x="230" y="387" class="small mono">softmax(QKᵀ / √d) · V</text>
+  <path class="conn" d="M230 341V308"/>
+  <rect class="norm" x="125" y="437" width="210" height="34" rx="5"/><text x="230" y="459" class="label">RMSNorm</text>
+  <path class="conn" d="M230 437V405"/>
+  <path class="conn" d="M230 515V473"/>
+  <text x="230" y="540" class="label italic">layer input x</text>
+  <circle cx="230" cy="504" r="3" fill="#344054"/>
+  <path class="skip" d="M230 504H65V291H213"/>
+  <text x="52" y="402" class="small italic" transform="rotate(-90 52 402)">residual x</text>
+  <circle cx="230" cy="270" r="3" fill="#344054"/>
+  <path class="skip" d="M230 270H92V70H213"/>
+  <text x="79" y="176" class="small italic" transform="rotate(-90 79 176)">residual</text>
+  <text x="272" y="296" class="small mono">x + attn</text>
+  <text x="272" y="75" class="small mono">x + mlp</text>
+</svg>

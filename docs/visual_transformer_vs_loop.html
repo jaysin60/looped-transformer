@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<!--
+  Visual language adapted from arjun kocher's Loop Transformer:
+  https://www.k-a.in/loop-transformer.html
+  Original design and diagrams: arjun kocher, CC BY 4.0.
+  This version independently restyles the typography and palette, redraws the
+  architecture, and changes the explanations for this repository's experiments.
+  License for the adapted visual language: https://creativecommons.org/licenses/by/4.0/
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="An interactive, technically precise guide to this repository's looped-transformer upcycling experiment: shared layers, base-preserving recurrence, sampled-loop training, TBPTL, and k-sweep results.">
+<title>Looped Transformer — the upcycling experiment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f7fb;--ink:#182235;--muted:#667085;--accent:#3f4d9b;--accent-light:#8795cf;
+  --border:#d9e1ec;--link:#087f8c;--link-hover:#065f69;--panel:#edf1f7;--line:#344054;
+  --plain:#ffffff;--plain-b:#a6b3c5;--swa:#e9e7ff;--swa-b:#a99eea;--full:#dff4ec;
+  --full-b:#75bfa7;--reuse:#e2f2f7;--reuse-b:#7bb8c7;--reindex:#fff0df;--reindex-b:#dfa36b;
+  --hl:#6d4bd0;--grid:rgba(67,80,110,.08);
+  --sans:"IBM Plex Sans","Avenir Next","Segoe UI",Arial,sans-serif;
+  --body:'IBM Plex Sans','Avenir Next','Segoe UI',sans-serif;--heading:'IBM Plex Sans','Avenir Next','Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background-color:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:29px 29px;background-position:-1px -1px;color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.7;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+a{color:var(--link);text-decoration:none;border-bottom:1px solid rgba(8,127,140,.25)}
+a:hover{color:var(--link-hover);border-bottom-color:var(--link-hover)}
+:focus-visible{outline:1px solid var(--link);outline-offset:3px}
+.page{max-width:1080px;margin:0 auto;padding:2.5rem 2rem 3rem}
+header.top{text-align:center;margin:3.5rem auto 2.7rem;max-width:760px}
+header.top h1{font-family:var(--heading);font-weight:600;font-size:3rem;letter-spacing:-.04em;line-height:1.15;margin-bottom:.55rem}
+header.top .byline{font-size:1rem;color:var(--muted);letter-spacing:.01em;font-style:normal}
+header.top::after{content:'';display:block;width:60px;height:2px;background:var(--accent-light);opacity:.7;margin:2rem auto 0}
+nav.toc{display:flex;justify-content:center;flex-wrap:wrap;gap:.5rem 1.25rem;max-width:760px;margin:0 auto 3rem;font-size:.92rem;color:var(--muted)}
+nav.toc a{color:var(--accent);border-bottom:none;font-weight:500}
+.prose p.t,.prose h2,.prose ul.t,.prose ol.t{max-width:700px;margin-left:auto;margin-right:auto;background:rgba(245,247,251,.9);box-shadow:0 0 0 .6rem rgba(245,247,251,.9)}
+.prose p.t{text-align:left;hyphens:auto;line-height:1.8;margin-bottom:1.7rem}
+.prose p.first{border-left:3px solid var(--accent);padding-left:1rem}
+.prose h2{font-family:var(--heading);font-weight:600;font-style:normal;font-size:1.65rem;color:var(--accent);letter-spacing:-.025em;line-height:1.3;margin-top:4rem;margin-bottom:1.2rem}
+.prose h2::before{content:'';display:block;width:40px;height:2px;background:var(--accent-light);opacity:.75;margin:0 0 1.3rem}
+.prose h3{font-family:var(--heading);font-size:1.25rem;font-weight:600;color:var(--accent);margin:1.6rem 0 .5rem}
+.prose ul.t,.prose ol.t{margin-bottom:1.8rem;line-height:1.75;padding-left:1.25rem}
+.prose li{margin-bottom:.45rem}.prose li::marker{color:var(--accent-light)}
+code.i{font-family:var(--mono);font-size:.79em;font-weight:400;background:#edf1f7;border:1px solid var(--border);border-radius:6px;padding:.06em .3em;hyphens:none}
+b{font-weight:600}.hl{color:var(--hl)}
+.figure{margin:3rem auto;max-width:960px;padding:.8rem 0 .4rem;position:relative}
+.figure::before{content:'';display:block;width:40px;height:1px;background:var(--accent-light);opacity:.6;margin:0 auto 1.7rem}
+.fwrap{max-width:630px;margin:0 auto;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.fwrap::-webkit-scrollbar{height:4px}.fwrap::-webkit-scrollbar-thumb{background:var(--accent-light)}
+svg.fig{display:block;width:100%;height:auto;font-family:var(--sans)}
+.toolbar{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.45rem;margin:0 0 1rem}
+.toolbar .label{font-style:normal;color:var(--muted);margin-right:.35rem}
+.toolbar .sep{width:1px;height:22px;background:var(--border);margin:0 .35rem}
+.btn{font-family:var(--body);font-size:15px;line-height:1.4;background:var(--bg);border:1px solid var(--border);color:var(--accent);border-radius:4px;padding:.28rem .8rem;cursor:pointer;transition:border-color .25s,background .25s}
+.btn:hover{border-color:var(--accent-light)}.btn[aria-pressed="true"]{background:#e9eafa;border-color:var(--accent-light);color:var(--hl)}
+.pp{width:31px;height:31px;border-radius:50%;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.depth{font-family:var(--mono);font-size:12px;font-weight:400;color:var(--hl);text-align:center;margin:.2rem auto .5rem;min-height:1.5em}
+.stages{display:flex;justify-content:center;flex-wrap:wrap;gap:.4rem 1rem;margin-top:.5rem;font-family:var(--heading);font-style:normal;font-size:1rem;color:#b1bdd0;letter-spacing:.03em}
+.stages span{transition:color .35s}.stages span.on{color:var(--hl)}
+.partinfo{font-size:16.5px;line-height:1.6;margin:.6rem auto 0;max-width:640px;text-align:center;min-height:3.3em;background:rgba(245,247,251,.9);box-shadow:0 0 0 .45rem rgba(245,247,251,.9)}
+.partinfo b{color:var(--hl)}.partinfo.hint{font-style:normal;color:var(--accent-light)}
+.caption{font-size:16.5px;line-height:1.7;margin:1.1rem auto 0;max-width:790px;text-align:left;hyphens:auto;background:rgba(245,247,251,.9);box-shadow:0 0 0 .45rem rgba(245,247,251,.9)}
+.caption.center{text-align:center}.caption b{font-weight:600}
+.equation{font-family:var(--mono);font-size:14px;line-height:1.9;font-weight:400;text-align:center;color:var(--hl);background:rgba(226,242,247,.55);border-top:1px solid var(--reuse-b);border-bottom:1px solid var(--reuse-b);padding:.75rem 1rem;max-width:700px;margin:1.3rem auto}
+.scrollwide{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}.scrollwide::-webkit-scrollbar{height:4px}.scrollwide::-webkit-scrollbar-thumb{background:var(--accent-light)}
+.wide-img{display:block;width:100%;height:auto;max-width:960px;margin:0 auto;border:1px solid var(--border);border-radius:6px}
+.scrollhint{display:none;text-align:center;color:var(--accent-light);font-size:13px;font-style:normal;margin-top:.3rem}
+.layer-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:2.5rem;align-items:center;max-width:900px;margin:2rem auto}
+.layer-grid img{display:block;width:100%;height:auto;border:1px solid var(--border);border-radius:6px}
+.layer-grid p{text-align:left;background:rgba(245,247,251,.88);box-shadow:0 0 0 .5rem rgba(245,247,251,.88)}
+.callout{max-width:700px;margin:1.5rem auto;padding:.8rem 1rem;border-left:2px solid var(--accent-light);background:rgba(237,241,247,.88);font-size:16.5px;line-height:1.7}
+.facts{width:100%;max-width:720px;margin:1.5rem auto 2rem;border-collapse:collapse;font-size:15.5px;line-height:1.5;background:rgba(245,247,251,.92);box-shadow:0 0 0 .5rem rgba(245,247,251,.92)}
+.facts th{text-align:left;font-weight:400;color:var(--muted);font-style:normal;padding:.48rem .6rem .48rem 0;border-bottom:1px solid var(--border);vertical-align:top;width:31%}
+.facts td{padding:.48rem .6rem .48rem 0;border-bottom:1px solid var(--border);vertical-align:top}.facts td.n{font-family:var(--mono);font-size:12.5px;font-weight:400;white-space:nowrap}.facts tr.k td:first-child{color:var(--hl)}
+.result-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;max-width:720px;margin:1.5rem auto;background:var(--border);border:1px solid var(--border)}
+.result-stats div{background:rgba(245,247,251,.96);padding:1rem;text-align:center}.result-stats strong{display:block;font-family:var(--heading);font-size:1.8rem;font-weight:400;color:var(--hl);line-height:1.2}.result-stats span{font-size:14px;color:var(--muted);font-style:normal}
+.result-chart{display:block;width:100%;max-width:760px;height:auto;margin:0 auto;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:var(--sans)}
+.matrix{width:100%;max-width:850px;margin:1.5rem auto;border-collapse:collapse;font-size:15.5px;line-height:1.55;background:rgba(245,247,251,.92)}
+.matrix th,.matrix td{padding:.7rem .75rem;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}.matrix th{font-family:var(--heading);font-style:normal;font-weight:400;color:var(--accent);font-size:1.05rem}.matrix td:first-child{font-weight:600;color:var(--hl);width:24%}
+.status{display:inline-block;font-family:var(--sans);font-size:10px;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--plain-b);border-radius:999px;padding:.03rem .45rem;margin-left:.35rem;color:var(--muted);vertical-align:middle;font-weight:400;white-space:nowrap}
+.status.done{background:var(--full);border-color:var(--full-b)}.status.next{background:var(--reuse);border-color:var(--reuse-b)}
+.glm-grid{display:grid;grid-template-columns:290px minmax(0,1fr);gap:2rem;align-items:center;max-width:900px;margin:2rem auto}.glm-grid img{width:100%;height:auto;border:1px solid var(--border);border-radius:6px}.glm-grid p{text-align:left;background:rgba(245,247,251,.9);box-shadow:0 0 0 .5rem rgba(245,247,251,.9)}
+footer{margin:4.5rem auto 0;max-width:700px;text-align:center;font-size:14.5px;color:var(--muted);font-style:normal;line-height:1.75;background:rgba(245,247,251,.9);box-shadow:0 0 0 .6rem rgba(245,247,251,.9)}
+footer::before{content:'';display:block;width:60px;height:1px;background:var(--accent-light);opacity:.55;margin:0 auto 1.6rem}
+/* SVG vocabulary */
+.b rect{stroke-width:2}.b text{font-size:15px;fill:#24324a;text-anchor:middle;dominant-baseline:central}
+.plain{fill:var(--plain);stroke:var(--plain-b)}.swa{fill:var(--swa);stroke:var(--swa-b)}.full{fill:var(--full);stroke:var(--full-b)}.reindex{fill:var(--reindex);stroke:var(--reindex-b)}.reuse{fill:var(--reuse);stroke:var(--reuse-b)}
+.conn{fill:none;stroke:var(--line);stroke-width:2}.conn.idle{stroke:#bdc7d6;stroke-dasharray:4 6}.conn.back{stroke:var(--hl);stroke-width:2.4;stroke-dasharray:8 6}.conn.flow{stroke:var(--hl);stroke-width:3;stroke-dasharray:9 7;animation:flow .9s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-16}}
+.blk,.gt{transition:stroke .4s,stroke-width .4s,fill .4s}.hot{fill:transparent;cursor:pointer;outline:none}.hot:focus-visible{stroke:var(--link);stroke-width:1.5;stroke-dasharray:3 3}.selbox{fill:none;stroke:var(--hl);stroke-width:2.2;pointer-events:none;transition:opacity .25s}
+@media(max-width:760px){.page{padding:1.5rem 1.25rem 2rem}header.top h1{font-size:2.35rem}.layer-grid,.glm-grid{grid-template-columns:1fr;gap:1rem}.layer-grid img{max-width:360px;margin:auto}.glm-grid img{max-width:280px;margin:auto}.result-stats{grid-template-columns:1fr}.prose p.t{text-align:left}.matrix{font-size:14px}.facts th{width:38%}.scrollwide .wide-img{min-width:720px;max-width:none}.scrollwide .result-chart{min-width:620px;max-width:none}.scrollhint{display:block}}
+@media(max-width:480px){body{font-size:16px}.page{padding:1rem .9rem 2rem}header.top h1{font-size:2rem}.fwrap{overflow-x:auto}.fwrap svg.fig{min-width:480px}.caption{text-align:left}.equation{font-size:11.5px;overflow-x:auto}.matrix{display:block;overflow-x:auto;white-space:normal}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.conn.flow{animation:none;stroke-dasharray:none}*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="page">
+<header class="top">
+  <h1>Looped Transformer</h1>
+  <p class="byline">same weights, more passes — a small-scale upcycling experiment</p>
+</header>
+<nav class="toc" aria-label="Contents">
+  <a href="#architecture">architecture</a><a href="#recurrence">recurrence</a><a href="#training">training</a><a href="#results">results</a><a href="#ablations">ablations</a><a href="#glm">GLM comparison</a>
+</nav>
+<main class="prose">
+<p class="t first">A standard transformer stores a stack of layers and runs each one once. This repository asks a different question: can we take a pretrained coding model, run its middle layers again with the <em>same weights</em>, and let a single checkpoint choose more compute at inference time? The experiment keeps the pretrained model intact at initialization, then learns whether extra passes are useful.</p>
+
+<section class="figure" id="architecture" aria-labelledby="architecture-title">
+  <h2 id="architecture-title" style="display:none">Interactive looped architecture</h2>
+  <div class="toolbar" aria-label="Animation and loop-count controls">
+    <span class="label">choose inference depth</span>
+    <button class="btn kbtn" data-k="1" aria-pressed="false">k = 1</button>
+    <button class="btn kbtn" data-k="2" aria-pressed="true">k = 2</button>
+    <button class="btn kbtn" data-k="3" aria-pressed="false">k = 3</button>
+    <button class="btn kbtn" data-k="4" aria-pressed="false">k = 4</button>
+    <span class="sep" aria-hidden="true"></span>
+    <button class="btn pp" id="pp" aria-label="pause animation"></button>
+  </div>
+  <div class="depth" id="depth">28 + 16 × (2 − 1) = 44 layer passes · 28 stored layers</div>
+  <div class="fwrap"><svg class="fig" id="arch" viewBox="120 0 620 960" role="img" aria-label="Looped Qwen architecture. Read bottom to top: embedding, six input layers, a shared block of sixteen decoder layers repeated k times, six output layers, RMSNorm and language-model head. Later passes use a gated refinement path."></svg></div>
+  <div class="stages" id="stages" aria-hidden="true"></div>
+  <p class="partinfo hint" id="partinfo" aria-live="polite">Tap any part of the diagram to see what it does.</p>
+  <p class="caption"><b>Figure 1 | One shared block, not k copies.</b> Read bottom to top. For the 28-layer Qwen2.5-Coder-1.5B configuration, the partition is 6 / 16 / 6. The brown return path is used only between passes. Changing <code class="i">k</code> changes executed depth, not the number of stored decoder layers. The moving dot illustrates state flow; it is not a single-token approximation of attention.</p>
+</section>
+
+<h2 id="recurrence">The loop starts as the pretrained model</h2>
+<p class="t">Naively inserting a recurrence changes the computation even at <code class="i">k=1</code>, which is a difficult way to adapt a pretrained model. Here, pass 1 runs the original input, recurrent, and output partitions without an extra loop-boundary normalization or gate. With zero-initialized LoRA B matrices, that makes the initial <code class="i">k=1</code> computation match the base to about <code class="i">1e-6</code> loss difference in the repository’s check.</p>
+
+<section class="figure">
+  <div class="scrollwide"><img class="wide-img" src="diagrams/layer_recurrent.svg" alt="Base-preserving recurrence: pass one is F of x; later passes add a scalar-gated delta from the same full recurrent block to the previous state."></div>
+  <p class="scrollhint">scroll sideways to inspect the full figure</p>
+  <p class="caption"><b>Figure 2 | The gate belongs outside the block.</b> <code class="i">F</code> denotes all 16 shared decoder layers. On later passes, the block proposes <code class="i">δₜ</code>; one learned scalar <code class="i">g</code> scales that proposal and the model adds it to the previous state. Since <code class="i">g</code> starts at zero, all values of <code class="i">k</code> initially produce the same output.</p>
+</section>
+
+<div class="equation">pass 1:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s₁ = F(x)<br>passes 2…k:&nbsp;&nbsp;δₜ = F(RMSNorm(sₜ₋₁))<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sₜ = sₜ₋₁ + g · δₜ</div>
+<p class="t">This is deliberately not GLM’s per-token progressive gate, and it is not a gate on every attention or MLP residual. It is one scalar applied once per later recurrent pass. The reported smoke runs use <code class="i">--no-inject-input</code>. Setting <code class="i">inject_input=True</code> (the constructor default) changes the later-pass input to <code class="i">RMSNorm(sₜ₋₁ + x)</code> and is a separate ablation.</p>
+<div class="callout"><b>What “k=1 equals the base” means.</b> It is an <em>initialization</em> guarantee. After training, LoRA and the loop-boundary parameters have changed, so <code class="i">k=1</code> means one pass through the adapted checkpoint—not the original pretrained checkpoint.</div>
+
+<div class="layer-grid">
+  <div>
+    <h3>Inside F, the layers stay ordinary</h3>
+    <p>Every one of the 16 decoder layers retains the base model’s pre-norm attention, SwiGLU MLP, RoPE, and residual adds. Weight sharing happens <em>between passes</em>; the 16 layers within one pass are still different layers.</p>
+    <p>The trainer can add LoRA to projections, but it does not replace the decoder layer with a new gated-attention architecture.</p>
+  </div>
+  <img src="diagrams/layer_standard.svg" alt="Ordinary pre-norm decoder layer with attention and MLP residual adds.">
+</div>
+
+<h2 id="training">What we are actually training</h2>
+<p class="t">One training step draws a loop count, runs that many passes, and applies the next-token loss only after the final pass. A 10% override forces <code class="i">k=1</code>, retaining a direct training signal for the shallow computation. With TBPTL depth 1, earlier passes run under <code class="i">no_grad</code>; only the last pass builds a backward graph.</p>
+
+<section class="figure">
+  <div class="scrollwide"><img class="wide-img" src="diagrams/experiment_pipeline.svg" alt="Experiment pipeline from open coding and agentic data through assistant-only labels, sampled k, TBPTL depth one, and a k sweep on one saved adapter."></div>
+  <p class="scrollhint">scroll sideways to inspect the full figure</p>
+  <p class="caption"><b>Figure 3 | The experimental loop around the model loop.</b> The TBPTL column shows a sampled <code class="i">k=4</code> step. Evaluation reopens one saved adapter and changes only <code class="i">k</code>, so the sweep measures elastic depth without retraining a separate model for every row.</p>
+</section>
+
+<table class="facts">
+  <tr class="k"><th scope="row">Base / partition</th><td>Qwen2.5-Coder-1.5B · 28 layers · <b>6 input / 16 recurrent / 6 output</b></td></tr>
+  <tr><th scope="row">Trainable pieces</th><td>LoRA matrices, loop-boundary RMSNorms, and the scalar loop gate. Pretrained linear weights are frozen.</td></tr>
+  <tr><th scope="row">Trainer LoRA default</th><td>Rank 16, α=16; q/k/v/o and SwiGLU projections in <b>all three partitions</b>. A run can select different blocks explicitly. The planned L4 notebook uses rank 32.</td></tr>
+  <tr><th scope="row">Loop sampling</th><td class="n">k ∈ {1,2,3,4} · 10% override → k=1</td></tr>
+  <tr><th scope="row">Memory recipe</th><td>TBPTL depth 1, gradient checkpointing, packed sequences, assistant-only labels, gradient accumulation.</td></tr>
+  <tr><th scope="row">Data</th><td>OpenCoder educational instructions, OpenThoughts-Agent trajectories, and R2E-Gym software-engineering trajectories.</td></tr>
+</table>
+
+<h2 id="results">More passes are a dial, not a free win</h2>
+<p class="t">The completed local experiment is intentionally small: Qwen2.5-Coder-0.5B, LoRA, 200 micro-batches of batch 1 × 2,048 tokens—<b>409,600 raw token presentations</b> and 50 optimizer updates. Gradient accumulation does not multiply the token count again. The plot shows the final 5 / 14 / 5 adapter on four sequences from the random held-out evaluation used in the run log. Lower cross-entropy is better. The vertical scale is zoomed to make the tiny differences visible.</p>
+
+<section class="figure">
+  <div class="scrollwide"><svg class="result-chart" viewBox="0 0 760 390" role="img" aria-labelledby="chart-title chart-desc">
+    <title id="chart-title">Final adapter held-out loss by loop count</title>
+    <desc id="chart-desc">At k equals one the loss is 1.0689, at k equals two it is 1.0685, and at k equals four it is 1.0696. K equals three was not included in this final evaluation. The y axis ranges from 1.0680 to 1.0700.</desc>
+    <defs><pattern id="resultDots" width="29" height="29" patternUnits="userSpaceOnUse"><path d="M29 0H0V29" fill="none" stroke="#cbd5e1" stroke-width=".7" opacity=".42"/></pattern></defs>
+    <rect width="760" height="390" fill="#f5f7fb"/><rect width="760" height="390" fill="url(#resultDots)"/>
+    <text x="380" y="30" text-anchor="middle" font-family="'IBM Plex Sans','Avenir Next',sans-serif" font-style="normal" font-weight="600" font-size="20" fill="#3f4d9b">final adapter · held-out cross-entropy</text>
+    <text x="28" y="55" font-size="12" fill="#667085">lower is better ↓</text>
+    <g stroke="#d9e1ec" stroke-width="1"><path d="M115 60H690M115 115H690M115 170H690M115 225H690M115 280H690"/></g>
+    <g font-family="'IBM Plex Mono',ui-monospace,monospace" font-size="11" fill="#667085" text-anchor="end"><text x="101" y="64">1.0700</text><text x="101" y="119">1.0695</text><text x="101" y="174">1.0690</text><text x="101" y="229">1.0685</text><text x="101" y="284">1.0680</text></g>
+    <path d="M115 60V280H690" fill="none" stroke="#8996aa" stroke-width="1.4"/>
+    <g stroke-width="2"><path d="M180 181V280" stroke="#a6b3c5"/><path d="M330 225V280" stroke="#75bfa7"/><path d="M630 103V280" stroke="#a99eea"/></g>
+    <path d="M180 181L330 225" fill="none" stroke="#3f4d9b" stroke-width="2"/>
+    <path d="M330 225L630 103" fill="none" stroke="#3f4d9b" stroke-width="1.5" stroke-dasharray="5 6"/>
+    <circle cx="180" cy="181" r="7" fill="#ffffff" stroke="#8996aa" stroke-width="2.5"/><circle cx="330" cy="225" r="8" fill="#dff4ec" stroke="#5ba18d" stroke-width="2.5"/><circle cx="630" cy="103" r="7" fill="#e9e7ff" stroke="#a99eea" stroke-width="2.5"/>
+    <g font-family="'IBM Plex Mono',ui-monospace,monospace" font-size="13" text-anchor="middle"><text x="180" y="163" fill="#344054">1.0689</text><text x="330" y="251" fill="#25755f">1.0685</text><text x="630" y="85" fill="#6d4bd0">1.0696</text></g>
+    <g font-size="14" text-anchor="middle" fill="#24324a"><text x="180" y="312">k = 1</text><text x="330" y="312">k = 2</text><text x="480" y="312" fill="#98a5b8">k = 3</text><text x="630" y="312">k = 4</text></g>
+    <text x="480" y="337" text-anchor="middle" font-size="11.5" font-style="normal" fill="#98a5b8">not evaluated here</text>
+    <text x="330" y="362" text-anchor="middle" font-size="13" font-style="normal" fill="#667085">inference loop count · same saved adapter</text>
+  </svg></div>
+  <p class="scrollhint">scroll sideways to inspect the full figure</p>
+  <p class="caption"><b>Figure 4 | A tiny k=2 gain, then a reversal.</b> Final 5 / 14 / 5 adapter, four held-out sequences (batch size 1). The dashed segment spans the missing final <code class="i">k=3</code> measurement; it is not a measured value. Differences of about <code class="i">1e-3</code> on this small split should be read as pipeline diagnostics, not robust evidence of a scaling win.</p>
+</section>
+
+<div class="result-stats">
+  <div><strong>−0.0004</strong><span>k=1 → k=2 loss change</span></div>
+  <div><strong>+0.0007</strong><span>k=1 → k=4 loss change</span></div>
+  <div><strong>≈ 0.004</strong><span>final scalar gate</span></div>
+</div>
+<p class="t">At step 100 of the same run, the sweep was 1.1563 / 1.1556 / 1.1549 / 1.1548 for <code class="i">k=1…4</code>. The final evaluation no longer shows monotonic improvement. That change is worth showing rather than hiding: the loop is contributing very little at this budget, and more passes are not automatically better.</p>
+
+<h2 id="ablations">What the ablations say</h2>
+<table class="matrix">
+  <thead><tr><th>Variant</th><th>What changed</th><th>Observed result</th></tr></thead>
+  <tbody>
+    <tr><td>Exact Dory recurrence</td><td>Normalize/re-inject from the first pass; no base-preserving passthrough.</td><td><code class="i">k=1</code> best; additional loops degraded loss. The pretrained computation was already out of distribution at initialization.</td></tr>
+    <tr><td>Base-preserving + zero gate <span class="status done">current</span></td><td>Pass 1 preserves the base; later passes add <code class="i">g·F(norm(s))</code>, with no input injection.</td><td>Stable. Tiny <code class="i">k=2</code> gain in the final 5 / 14 / 5 evaluation; deeper passes did not help.</td></tr>
+    <tr><td>Forced gate 0.05</td><td>Start with the refinement visibly active instead of starting as a no-op.</td><td>Actively harmful at this scale. The optimizer reduced the gate from 0.050 to 0.019 and <code class="i">k=1</code> won.</td></tr>
+    <tr><td>Smaller recurrent block</td><td>Partition 6 / 10 / 8 instead of 5 / 14 / 5 on the 0.5B model.</td><td>Same qualitative outcome: tiny <code class="i">k=2/3</code> gains, no deeper gain. Partition size was not the immediate bottleneck.</td></tr>
+  </tbody>
+</table>
+
+<h3>Next experiments, kept distinct from completed ones</h3>
+<ul class="t">
+  <li><span class="status next">next</span> Run the prepared 1.5B / roughly 16M-token Colab experiment and repeat the same-adapter <code class="i">k</code> sweep.</li>
+  <li><span class="status next">planned</span> Compare a non-looped LoRA baseline at the same data and trainable-parameter budget.</li>
+  <li><span class="status next">planned</span> Test Dory-style input injection, higher-rank LoRA or full fine-tuning, and per-source coding/agentic evaluation.</li>
+  <li><span class="status next">planned</span> Add difficulty-aware loop routing. The training code currently samples <code class="i">k</code>; it does not yet implement the paper’s difficulty curriculum.</li>
+</ul>
+
+<h2 id="glm">Do not conflate this recurrence with GLM 5.4</h2>
+<div class="glm-grid">
+  <img src="diagrams/glm54.svg" alt="GLM 5.4: 26 prelude layers, 28 shared layers run twice with per-token progressive gates, and 24 coda layers.">
+  <div>
+    <p>GLM 5.4 is a useful large-scale reference point, not a description of this code. Z.ai reports 26 prelude layers, 28 layers run twice, and 24 coda layers: <b>106 passes from 78 stored layers</b>.</p>
+    <p>Its per-token gated progressive updates, hybrid KV cache, and sparse attention-index reuse solve different problems. This repository uses one scalar refinement gate, has no such loop-aware KV system, and its naive generation path currently uses no KV cache.</p>
+  </div>
+</div>
+<table class="facts">
+  <tr><th scope="row">This repo</th><td>Upcycle a small Qwen coder · variable <code class="i">k=1…4</code> · base-preserving scalar-gated residual · TBPTL · LoRA.</td></tr>
+  <tr><th scope="row">GLM 5.4</th><td>Continued training at frontier scale · fixed two-pass middle · per-token progressive gates · hybrid KV + sparse-index reuse.</td></tr>
+</table>
+</main>
+<footer>
+  <p>Repository facts: <code class="i">looped/model.py</code>, <code class="i">looped/trainer.py</code>, <code class="i">README.md</code>, and <code class="i">results/RUN_LOG.md</code>. Background: <a href="https://arxiv.org/abs/2611.03998">Dory1.0-4B</a>. GLM claims: <a href="https://z.ai/blog/glm-5.4">Z.ai’s GLM 5.4 launch blog</a>.</p>
+  <p style="margin-top:1rem">Diagram layout and animation concepts adapted from <a href="https://www.k-a.in/loop-transformer.html">arjun kocher’s Loop Transformer</a>, licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Typography, palette, SVGs, and explanations are independently reworked for this repository.</p>
+</footer>
+</div>
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s)};
+var $$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s))};
+var NS="http://www.w3.org/2000/svg";
+function el(tag,attrs,parent,text){var e=document.createElementNS(NS,tag);for(var k in attrs)if(attrs[k]!=null)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e}
+
+(function(){
+  var svg=$('#arch'),C=330,X=245,W=170,top=292,bot=650,K=2;
+  var anim=null,paused=false,started=false,si=0,t0=null,hist=[],rest=0,steps=[];
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function t(x,y,str,style,anchor){return el('text',{x:x,y:y,'text-anchor':anchor||'middle',style:style||''},svg,str)}
+  function box(x,y,w,h,cls,str,id){var r=el('rect',{x:x,y:y,width:w,height:h,rx:5,class:cls,id:id||null,'stroke-width':1.8},svg);t(x+w/2,y+h/2+5,str,'font-size:14.5px;fill:#24324a');return r}
+  function arr(d,cls,marker){return el('path',{d:d,class:'conn '+(cls||''),'marker-end':marker===false?null:'url('+(marker||'#ah')+')'},svg)}
+  var defs=el('defs',{},svg);
+  [['ah','#344054'],['ahHot','#6d4bd0']].forEach(function(a){var m=el('marker',{id:a[0],viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:9,markerHeight:9,markerUnits:'userSpaceOnUse',orient:'auto'},defs);el('path',{d:'M0 0L10 5L0 10Z',fill:a[1]},m)});
+  var filter=el('filter',{id:'softGlow',x:'-2',y:'-2',width:'5',height:'5'},defs);el('feGaussianBlur',{stdDeviation:5},filter);
+
+  /* Output, bottom-to-top. */
+  t(C,27,'next-token logits','font-size:14.5px;fill:#24324a;font-style:normal');
+  arr('M'+C+',56V39');box(245,56,170,34,'plain','lm_head','lmHead');
+  arr('M'+C+',114V92');box(245,114,170,34,'reuse','RMSNorm','finalNorm');
+  arr('M'+C+',176V150');
+  el('rect',{x:235,y:176,width:190,height:58,rx:10,fill:'#edf1f7',stroke:'#98a5b8','stroke-width':2,class:'blk',id:'bCoda'},svg);
+  t(C,200,'Output · 6 layers','font-size:15px;font-weight:600;fill:#24324a');t(C,221,'run once','font-size:12.5px;fill:#667085;font-style:normal');
+  arr('M'+C+','+top+'V236');
+
+  /* One shared recurrent block. Its internal residual adds remain ordinary. */
+  el('rect',{x:205,y:top,width:250,height:bot-top,rx:12,fill:'#edf1f7',stroke:'#98a5b8','stroke-width':2,class:'blk',id:'bLoop'},svg);
+  t(C,316,'Shared recurrent block','font-size:15px;font-weight:600;fill:#24324a');t(C,337,'16 decoder layers · F','font-size:12.5px;fill:#667085;font-style:normal');
+  /* Draw the two skip connections first so boxes keep the labels unobstructed. */
+  arr('M'+C+',626H229V522H243', '', '#ah');arr('M'+C+',522H229V370H243','','#ah');
+  box(X,356,W,28,'reuse','Add');arr('M'+C+',356V342');
+  box(X,404,W,36,'reindex','Feed-forward');arr('M'+C+',404V386');
+  box(X,460,W,28,'reuse','RMSNorm');arr('M'+C+',460V442');
+  box(X,508,W,28,'reuse','Add');arr('M'+C+',508V490');
+  box(X,556,W,36,'swa','Self-attention');arr('M'+C+',556V538');
+  box(X,612,W,28,'reuse','RMSNorm');arr('M'+C+',612V594');
+  t(183,486,'k passes','font-size:17px;fill:#6d4bd0;font-style:normal','middle').setAttribute('transform','rotate(-90 183 486)');
+  t(475,330,'same module','font-size:12px;fill:#6d4bd0;font-style:normal','start');t(475,347,'every pass','font-size:12px;fill:#6d4bd0;font-style:normal','start');
+
+  /* Direct first pass; return path is only taken between passes. */
+  arr('M'+C+',770V'+(bot+2));
+  var backD='M'+C+','+top+'V268H565V735H'+C+'V'+(bot+2);
+  el('path',{d:backD,fill:'none',stroke:'#bdc7d6','stroke-width':2,'stroke-dasharray':'4 6','marker-end':'url(#ah)'},svg);
+  var backLit=el('path',{d:backD,fill:'none',stroke:'#6d4bd0','stroke-width':2.8,'stroke-dasharray':'8 6',opacity:0,id:'backLit'},svg);
+  el('circle',{cx:565,cy:710,r:18,fill:'#e2f2f7',stroke:'#7bb8c7','stroke-width':2,class:'gt',id:'gate'},svg);
+  t(565,716,'g','font-family:var(--body);font-style:normal;font-size:20px;fill:#24324a');
+  t(590,666,'passes 2…k','font-size:12.5px;fill:#6d4bd0;font-style:normal','start');t(590,684,'gated refinement','font-size:12.5px;fill:#6d4bd0;font-style:normal','start');
+  el('rect',{x:235,y:770,width:190,height:58,rx:10,fill:'#edf1f7',stroke:'#98a5b8','stroke-width':2,class:'blk',id:'bPre'},svg);
+  t(C,794,'Input · 6 layers','font-size:15px;font-weight:600;fill:#24324a');t(C,815,'run once','font-size:12.5px;fill:#667085;font-style:normal');
+  arr('M'+C+',858V830');box(245,858,170,32,'plain','Embedding','embedding');
+  arr('M'+C+',916V892');t(C,938,'input tokens','font-size:14.5px;fill:#24324a;font-style:normal');
+
+  var INFO={
+    tokens:['Input tokens','Text split into token IDs. The moving dot represents the hidden-state flow, not a claim that attention processes only one token.'],
+    emb:['Embedding','The pretrained token embedding maps token IDs to residual-stream vectors.'],
+    pre:['Input block','Six original pretrained decoder layers run once and produce x.'],
+    loop:['Shared recurrent block F','Sixteen original decoder layers form one module. Every pass calls that same module; the layers inside a pass are still distinct.'],
+    attention:['Self-attention','Ordinary causal self-attention from the pretrained decoder layer. Reuse does not add a new gate here.'],
+    ff:['Feed-forward','The original SwiGLU MLP. It keeps its ordinary residual add inside each decoder layer.'],
+    norm:['RMSNorm','Decoder layers retain pre-normalization. Later recurrent passes also normalize the previous state before F.'],
+    add:['Residual add','Attention and MLP use the base model’s ordinary residual connections. The scalar loop gate is outside this layer.'],
+    gate:['Scalar gate g','Used only on passes 2…k. It scales the whole recurrent block’s proposed delta before that delta is added to the previous state. It starts at zero.'],
+    back:['Refinement path','Between passes, the shared block produces a new candidate refinement. The precise state update is sₜ = sₜ₋₁ + g·δₜ.'],
+    coda:['Output block','Six original pretrained decoder layers run once after the final recurrent pass.'],
+    lm:['Language-model head','The pretrained LM head maps the normalized final state to vocabulary logits.'],
+    output:['Next-token logits','The same trained adapter produces these logits at every k; only the number of recurrent passes changes.']
+  };
+  var sel=el('rect',{class:'selbox',rx:6,opacity:0},svg);
+  function showInfo(key){var p=$('#partinfo');if(!key){p.className='partinfo hint';p.textContent='Tap any part of the diagram to see what it does.';sel.setAttribute('opacity',0);return}p.className='partinfo';p.innerHTML='<b>'+INFO[key][0]+'.</b> '+INFO[key][1]}
+  function lit(id,on){var e=document.getElementById(id);if(e){e.style.stroke=on?'#6d4bd0':'';e.style.strokeWidth=on?'2.7':''}}
+  function stage(i){$$('#stages span').forEach(function(s){s.classList.toggle('on',+s.getAttribute('data-i')===i)})}
+  function hot(x,y,w,h,key){var r=el('rect',{x:x,y:y,width:w,height:h,rx:6,class:'hot',tabindex:0,role:'button','aria-label':INFO[key][0]},svg);function pick(e){if(e)e.stopPropagation();pause();showInfo(key);['bPre','bLoop','bCoda'].forEach(function(id){lit(id,false)});backLit.setAttribute('opacity',0);$('#gate').style.fill='';stage(-1);sel.setAttribute('x',x-3);sel.setAttribute('y',y-3);sel.setAttribute('width',w+6);sel.setAttribute('height',h+6);sel.setAttribute('opacity',1)}r.addEventListener('click',pick);r.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();pick(e)}})}
+  hot(205,top,250,bot-top,'loop');hot(245,612,W,28,'norm');hot(245,556,W,36,'attention');hot(245,508,W,28,'add');hot(245,460,W,28,'norm');hot(245,404,W,36,'ff');hot(245,356,W,28,'add');
+  hot(548,680,34,58,'gate');hot(540,268,50,410,'back');hot(235,770,190,58,'pre');hot(245,858,170,32,'emb');hot(250,920,160,28,'tokens');hot(235,176,190,58,'coda');hot(245,114,170,34,'norm');hot(245,56,170,34,'lm');hot(245,12,170,30,'output');
+
+  var TR=7,trail=[];for(var i=TR;i>=1;i--)trail.push(el('circle',{r:6-i*.6,fill:'#6d4bd0',opacity:0,'pointer-events':'none'},svg));
+  var glow=el('circle',{r:12,fill:'#6d4bd0',opacity:0,filter:'url(#softGlow)','pointer-events':'none'},svg);
+  var tok=el('circle',{r:6,fill:'#6d4bd0',stroke:'#f5f7fb','stroke-width':2,opacity:0,'pointer-events':'none'},svg);
+  var R={pre:'M'+C+',920V'+(bot+2),up:'M'+C+','+bot+'V'+top,back:backD,out:'M'+C+','+top+'V39'},RP={};
+  Object.keys(R).forEach(function(k){RP[k]=el('path',{d:R[k],fill:'none',stroke:'none','pointer-events':'none'},svg)});
+  function buildSteps(){steps=[{r:'pre',dur:1300,stage:0,blk:'bPre'}];for(var k=1;k<=K;k++){steps.push({r:'up',dur:1900,stage:k,blk:'bLoop'});if(k<K)steps.push({r:'back',dur:1600,stage:k,back:true})}steps.push({r:'out',dur:1500,stage:K+1,blk:'bCoda'})}
+  function buildStages(){var names=['input'];for(var k=1;k<=K;k++)names.push('pass '+k);names.push('output');$('#stages').innerHTML=names.map(function(n,i){return '<span data-i="'+i+'">'+n+'</span>'}).join('');buildSteps()}
+  var ease=function(x){return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+  function setPos(p,o){tok.setAttribute('cx',p.x);tok.setAttribute('cy',p.y);glow.setAttribute('cx',p.x);glow.setAttribute('cy',p.y);tok.setAttribute('opacity',o);glow.setAttribute('opacity',o*.35)}
+  function begin(st){stage(st.stage);if(st.blk)lit(st.blk,true);if(st.back){backLit.setAttribute('opacity',.95);$('#gate').style.fill='#e9e7ff'}}
+  function end(st){if(st.blk)lit(st.blk,false);if(st.back){backLit.setAttribute('opacity',0);$('#gate').style.fill=''}}
+  function frame(ts){
+    if(paused){anim=null;return}
+    if(rest){if(ts<rest){anim=requestAnimationFrame(frame);return}rest=0;si=0;t0=null;hist=[];begin(steps[0])}
+    var st=steps[si];if(t0===null)t0=ts;
+    var f=Math.min(1,(ts-t0)/st.dur),path=RP[st.r],p=path.getPointAtLength(ease(f)*path.getTotalLength());
+    var fade=si===steps.length-1?Math.max(0,1-Math.max(0,f-.78)*4.5):1;setPos(p,fade);
+    hist.unshift({x:p.x,y:p.y});if(hist.length>TR*3)hist.pop();trail.forEach(function(c,i){var h=hist[(TR-i)*3-1];if(h){c.setAttribute('cx',h.x);c.setAttribute('cy',h.y);c.setAttribute('opacity',fade*(.05+.3*(i/TR)))}});
+    if(f>=1){end(st);si++;t0=null;if(si>=steps.length){stage(-1);trail.forEach(function(c){c.setAttribute('opacity',0)});rest=ts+1300}else begin(steps[si])}
+    anim=requestAnimationFrame(frame);
+  }
+  var IC_PAUSE='<svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><rect x="2.2" y="1.8" width="2.4" height="8.4" rx=".6" fill="currentColor"/><rect x="7.4" y="1.8" width="2.4" height="8.4" rx=".6" fill="currentColor"/></svg>';
+  var IC_PLAY='<svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M3.4 1.9v8.2c0 .5.5.8.9.5l6.3-4.1c.4-.3.4-.8 0-1.1L4.3 1.4c-.4-.3-.9 0-.9.5z" fill="currentColor"/></svg>';
+  function start(){if(anim)return;paused=false;$('#pp').innerHTML=IC_PAUSE;$('#pp').setAttribute('aria-label','pause animation');if(!started){started=true;si=0;begin(steps[0])}anim=requestAnimationFrame(function(ts){t0=null;frame(ts)})}
+  function pause(){paused=true;$('#pp').innerHTML=IC_PLAY;$('#pp').setAttribute('aria-label','play animation')}
+  function setK(k){if(anim){cancelAnimationFrame(anim);anim=null}K=k;$$('.kbtn').forEach(function(b){b.setAttribute('aria-pressed',+b.getAttribute('data-k')===K?'true':'false')});$('#depth').textContent='28 + 16 × ('+K+' − 1) = '+(28+16*(K-1))+' layer passes · 28 stored layers';started=false;paused=false;si=0;t0=null;hist=[];rest=0;showInfo(null);buildStages();trail.concat([tok,glow]).forEach(function(c){c.setAttribute('opacity',0)});backLit.setAttribute('opacity',0);$('#gate').style.fill='';start()}
+  $$('.kbtn').forEach(function(b){b.addEventListener('click',function(){setK(+b.getAttribute('data-k'))})});
+  $('#pp').addEventListener('click',function(){if(paused||!anim){showInfo(null);start()}else pause()});
+  svg.addEventListener('click',function(){if(paused){showInfo(null);start()}});
+  buildStages();stage(-1);$('#pp').innerHTML=IC_PAUSE;
+  if(reduce){pause()}else if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){if(!paused||!started)start()}else if(anim){cancelAnimationFrame(anim);anim=null}})},{threshold:.2});io.observe($('#architecture'))}else start();
+})();
+})();
+</script>
+</body>
+</html>

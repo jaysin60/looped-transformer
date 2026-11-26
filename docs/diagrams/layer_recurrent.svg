@@ -1,0 +1,47 @@
+<svg viewBox="0 0 920 450" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" width="920" height="450">
+  <title id="title">Base-preserving recurrence used in this repository</title>
+  <desc id="desc">Pass one computes s1 equals F of x and therefore matches the pretrained base at initialization. On each later pass, F means the same full 16-layer block. It processes RMSNorm of the previous state to produce delta. One scalar gate g scales delta, which is added to the previous state. The gate starts at zero and is outside the decoder layers.</desc>
+  <!-- Visual language adapted from arjun kocher, https://www.k-a.in/loop-transformer.html (CC BY 4.0). Redrawn for this repository. -->
+  <defs>
+    <pattern id="dots" width="29" height="29" patternUnits="userSpaceOnUse"><path d="M29 0H0V29" fill="none" stroke="#cbd5e1" stroke-width=".7" opacity=".55"/></pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#344054"/></marker>
+    <marker id="arrowMuted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#8996aa"/></marker>
+  </defs>
+  <style>
+    text{font-family:"IBM Plex Sans","Avenir Next","Trebuchet MS",Arial,sans-serif;fill:#24324a;text-anchor:middle}
+    .panel{fill:#edf1f7;stroke:#98a5b8;stroke-width:2}.loop{fill:#e9e7ff;stroke:#a99eea;stroke-width:2}
+    .norm{fill:#e2f2f7;stroke:#7bb8c7;stroke-width:2}.gate{fill:#e2f2f7;stroke:#7bb8c7;stroke-width:2}
+    .good{fill:#dff4ec;stroke:#75bfa7;stroke-width:1.7}.conn{fill:none;stroke:#344054;stroke-width:2;marker-end:url(#arrow)}
+    .skip{fill:none;stroke:#8996aa;stroke-width:1.8;marker-end:url(#arrowMuted)}
+    .heading{font-family:"IBM Plex Sans","Avenir Next",sans-serif;font-size:21px;font-style:normal;font-weight:600;fill:#3f4d9b}.label{font-size:16px}.small{font-size:12.5px;fill:#667085}.italic{font-style:italic}.bold{font-weight:600}.mono{font-family:ui-monospace,Menlo,monospace;font-size:14px}.hot{fill:#6d4bd0}
+  </style>
+  <rect width="920" height="450" fill="#f5f7fb"/><rect width="920" height="450" fill="url(#dots)"/>
+  <path d="M450 55V390" stroke="#d9e1ec" stroke-width="1"/>
+  <text x="225" y="38" class="heading">pass 1 · preserve the base</text>
+  <rect class="good" x="108" y="58" width="234" height="32" rx="16"/><text x="225" y="79" class="small">k = 1 ⇒ pretrained computation at init</text>
+  <text x="225" y="122" class="label italic">s₁ = F(x)</text>
+  <path class="conn" d="M225 205V139"/>
+  <rect class="loop" x="115" y="205" width="220" height="105" rx="10"/>
+  <text x="225" y="239" class="label bold">F · recurrent block</text><text x="225" y="263" class="label">16 original decoder layers</text><text x="225" y="287" class="small italic">ordinary internal residuals</text>
+  <path class="conn" d="M225 365V312"/>
+  <text x="225" y="391" class="label italic">x · input-block output</text>
+  <text x="225" y="427" class="small">LoRA B = 0 · no loop gate on this pass</text>
+
+  <text x="650" y="38" class="heading">passes 2…k · gated refinement</text>
+  <text x="650" y="72" class="label italic">sₜ = sₜ₋₁ + g · δₜ</text>
+  <circle class="norm" cx="650" cy="112" r="15"/><text x="650" y="118" font-size="20">+</text>
+  <path class="conn" d="M650 97V82"/>
+  <circle class="gate" cx="650" cy="165" r="18"/><text x="650" y="171" class="label italic">×g</text>
+  <path class="conn" d="M650 147V129"/>
+  <text x="478" y="170" class="small italic hot" text-anchor="start">one scalar · starts at 0</text>
+  <rect class="loop" x="540" y="218" width="220" height="75" rx="10"/>
+  <text x="650" y="247" class="label bold">F · same 16 layers</text><text x="650" y="272" class="label italic">δₜ = F(RMSNorm(sₜ₋₁))</text>
+  <path class="conn" d="M650 218V185"/>
+  <rect class="norm" x="555" y="327" width="190" height="32" rx="5"/><text x="650" y="349" class="label">RMSNorm</text>
+  <path class="conn" d="M650 327V295"/>
+  <path class="conn" d="M650 397V361"/>
+  <text x="650" y="422" class="label italic">previous state sₜ₋₁</text>
+  <circle cx="650" cy="382" r="3" fill="#344054"/>
+  <path class="skip" d="M650 382H830V112H667"/>
+  <text x="842" y="253" class="small italic" transform="rotate(90 842 253)">keep previous state</text>
+</svg>

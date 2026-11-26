@@ -1,0 +1,47 @@
+<svg viewBox="0 0 420 730" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" width="420" height="730">
+  <title id="title">This repository’s Looped Transformer</title>
+  <desc id="desc">Read bottom to top. Six input layers run once. One shared block of 16 decoder layers runs k times. Six output layers run once. Later passes return through a scalar gated refinement path. Effective depth is 28 plus 16 times k minus 1.</desc>
+  <!-- Visual language adapted from arjun kocher, https://www.k-a.in/loop-transformer.html (CC BY 4.0). Redrawn for this repository. -->
+  <defs>
+    <pattern id="dots" width="29" height="29" patternUnits="userSpaceOnUse"><path d="M29 0H0V29" fill="none" stroke="#cbd5e1" stroke-width=".7" opacity=".55"/></pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#344054"/></marker>
+    <marker id="arrowHot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#6d4bd0"/></marker>
+  </defs>
+  <style>
+    text{font-family:"IBM Plex Sans","Avenir Next","Trebuchet MS",Arial,sans-serif;fill:#24324a;text-anchor:middle}
+    .box{fill:#ffffff;stroke:#a6b3c5;stroke-width:2}.panel{fill:#edf1f7;stroke:#98a5b8;stroke-width:2}
+    .norm{fill:#e2f2f7;stroke:#7bb8c7;stroke-width:2}.loop{fill:#e9e7ff;stroke:#a99eea;stroke-width:2}
+    .conn{fill:none;stroke:#344054;stroke-width:2;marker-end:url(#arrow)}
+    .back{fill:none;stroke:#6d4bd0;stroke-width:2.4;stroke-dasharray:8 6;marker-end:url(#arrowHot)}
+    .label{font-size:16px}.small{font-size:12.5px;fill:#667085}.italic{font-style:italic}.bold{font-weight:600}.hot{fill:#6d4bd0}
+  </style>
+  <rect width="420" height="730" fill="#f5f7fb"/><rect width="420" height="730" fill="url(#dots)"/>
+  <text x="170" y="27" class="label italic">next-token logits</text>
+  <path class="conn" d="M170 52V38"/>
+  <rect class="box" x="95" y="52" width="150" height="34" rx="5"/><text x="170" y="74" class="label">lm_head</text>
+  <path class="conn" d="M170 110V88"/>
+  <rect class="norm" x="95" y="110" width="150" height="34" rx="5"/><text x="170" y="132" class="label">RMSNorm</text>
+  <path class="conn" d="M170 168V146"/>
+  <rect class="panel" x="75" y="168" width="190" height="58" rx="10"/>
+  <text x="170" y="192" class="label bold">Output · 6 layers</text><text x="170" y="213" class="small italic">run once</text>
+  <path class="conn" d="M170 270V228"/>
+  <rect class="panel" x="55" y="270" width="230" height="220" rx="12"/>
+  <text x="170" y="297" class="label bold">Shared recurrent block</text>
+  <text x="170" y="318" class="small italic">16 decoder layers · F</text>
+  <rect class="loop" x="90" y="340" width="160" height="38" rx="6"/><text x="170" y="364" class="label">attention + MLP</text>
+  <text x="170" y="404" font-size="23">⋮</text>
+  <rect class="loop" x="90" y="424" width="160" height="38" rx="6"/><text x="170" y="448" class="label">same 16 layers</text>
+  <text x="36" y="387" class="label italic hot" transform="rotate(-90 36 387)">k passes</text>
+  <path class="conn" d="M170 538V492"/>
+  <path class="back" d="M170 270H354V490H172"/>
+  <circle cx="354" cy="380" r="18" fill="#e2f2f7" stroke="#7bb8c7" stroke-width="2"/>
+  <text x="354" y="386" font-size="20" font-style="italic">g</text>
+  <text x="354" y="422" class="small italic hot">later passes</text>
+  <text x="354" y="440" class="small italic hot">gated refinement</text>
+  <rect class="panel" x="75" y="538" width="190" height="56" rx="10"/>
+  <text x="170" y="561" class="label bold">Input · 6 layers</text><text x="170" y="582" class="small italic">run once</text>
+  <path class="conn" d="M170 632V596"/>
+  <rect class="box" x="95" y="632" width="150" height="30" rx="5"/><text x="170" y="652" class="label">Embedding</text>
+  <path class="conn" d="M170 694V664"/>
+  <text x="170" y="716" class="label italic">input tokens</text>
+</svg>

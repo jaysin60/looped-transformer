@@ -21,44 +21,61 @@ def read_jsonl(path: Path) -> list[dict]:
 
 
 def main() -> None:
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.2))
+    plt.rcParams.update({
+        "font.family": "sans-serif",
+        "font.sans-serif": ["Helvetica Neue", "Arial", "DejaVu Sans"],
+        "axes.edgecolor": "#98a5b8",
+        "axes.labelcolor": "#344054",
+        "text.color": "#24324a",
+        "xtick.color": "#667085",
+        "ytick.color": "#667085",
+    })
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.4), facecolor="#f5f7fb")
+    colors = ["#6d4bd0", "#087f8c"]
 
-    for label, stem in RUNS.items():
+    for color, (label, stem) in zip(colors, RUNS.items()):
         evals = read_jsonl(LOGS / f"{stem}_eval.jsonl")
         by_k = {row["k"]: row["val_loss"] for row in evals}
         ks = sorted(by_k)
         base = by_k[ks[0]]
         deltas = [(by_k[k] - base) * 1e3 for k in ks]
-        ax1.plot(ks, deltas, marker="o", linewidth=2, label=label)
+        ax1.plot(ks, deltas, marker="o", linewidth=2, markersize=5, color=color, label=label)
 
         train = read_jsonl(LOGS / f"{stem}_train.jsonl")
         steps = [r["step"] for r in train]
         gates = [r["gate"] for r in train]
-        ax2.plot(steps, gates, linewidth=1.8, label=label)
+        ax2.plot(steps, gates, linewidth=1.8, color=color, label=label)
 
-    ax1.axhline(0, color="black", linewidth=0.8)
-    ax1.set_xlabel("loop count k")
+    for ax in (ax1, ax2):
+        ax.set_facecolor("#f5f7fb")
+        ax.axhline(0, color="#8996aa", linewidth=0.8)
+        ax.grid(True, color="#cbd5e1", linewidth=0.7, linestyle="-", alpha=0.8)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.legend(fontsize=8, frameon=False)
+        ax.title.set_color("#3f4d9b")
+        ax.title.set_fontfamily("DejaVu Sans")
+        ax.title.set_fontstyle("normal")
+        ax.title.set_fontweight(600)
+
+    ax1.set_xlabel("loop count k · same checkpoint")
     ax1.set_ylabel("Δ validation loss vs k=1  (×10⁻³)")
-    ax1.set_title("Does looping help? (negative = loop helps)")
+    ax1.set_title("Does looping help?  negative = lower loss")
     ax1.set_xticks([1, 2, 3, 4])
-    ax1.grid(True, alpha=0.3)
-    ax1.legend(fontsize=8)
 
-    ax2.axhline(0, color="black", linewidth=0.8)
-    ax2.set_xlabel("training step")
-    ax2.set_ylabel("loop gate value")
-    ax2.set_title("Learned loop gate")
-    ax2.grid(True, alpha=0.3)
-    ax2.legend(fontsize=8)
+    ax2.set_xlabel("training micro-batch")
+    ax2.set_ylabel("scalar loop gate")
+    ax2.set_title("The refinement stays near zero")
 
-    fig.suptitle("Looped upcycle of Qwen2.5-Coder-0.5B on agentic+coding data", fontsize=11)
+    fig.suptitle("Looped upcycle of Qwen2.5-Coder-0.5B on agentic + coding data",
+                 fontsize=13, fontfamily="DejaVu Sans", color="#3f4d9b")
     fig.text(0.5, 0.005,
-             "k=1 is exactly the pretrained model. 0.5B LoRA, ~1.6M tokens, M6 MPS. "
-             "Gains are within ~1e-3; the loop is not yet earning its keep at this budget.",
-             ha="center", fontsize=7.5, color="#555555")
-    fig.tight_layout(rect=(0, 0.03, 1, 0.95))
+             "k=1 uses one pass and matched the pretrained base at initialization. "
+             "200/120 micro-batches = 0.410M/0.246M token presentations; in-training eval uses 8 held-out sequences. "
+             "Differences ~1e-3 are diagnostics, not robust gains.",
+             ha="center", fontsize=7.3, color="#667085")
+    fig.tight_layout(rect=(0, 0.045, 1, 0.94))
     out = ROOT / "results" / "k_sweep.png"
-    fig.savefig(out, dpi=180, bbox_inches="tight")
+    fig.savefig(out, dpi=180, bbox_inches="tight", facecolor=fig.get_facecolor())
     print(f"wrote {out}")
 
 

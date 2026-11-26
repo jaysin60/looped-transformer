@@ -1,0 +1,63 @@
+<svg viewBox="0 0 1100 350" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" width="1100" height="350">
+  <title id="title">Looped upcycling experiment pipeline</title>
+  <desc id="desc">Open coding and agentic examples are packed with assistant-only labels. Each training step samples k from one through four, with a ten percent forced k equals one override. For k equals four, the first three passes run without gradients and only the last pass is differentiated. One saved adapter is then evaluated at k equals one, two, three, and four.</desc>
+  <!-- Visual language adapted from arjun kocher, https://www.k-a.in/loop-transformer.html (CC BY 4.0). Redrawn for this repository. -->
+  <defs>
+    <pattern id="dots" width="29" height="29" patternUnits="userSpaceOnUse"><path d="M29 0H0V29" fill="none" stroke="#cbd5e1" stroke-width=".7" opacity=".55"/></pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#3f4d9b"/></marker>
+  </defs>
+  <style>
+    text{font-family:"IBM Plex Sans","Avenir Next","Trebuchet MS",Arial,sans-serif;fill:#24324a;text-anchor:middle}
+    .box{fill:#ffffff;stroke:#a6b3c5;stroke-width:1.7}.data{fill:#e0edff;stroke:#83a7e8;stroke-width:1.7}
+    .mask{fill:#dff4ec;stroke:#75bfa7;stroke-width:1.7}.loop{fill:#e9e7ff;stroke:#a99eea;stroke-width:1.7}
+    .gate{fill:#e2f2f7;stroke:#7bb8c7;stroke-width:1.7}.off{fill:#edf1f7;stroke:#a6b3c5;stroke-width:1.5;stroke-dasharray:4 4}
+    .conn{fill:none;stroke:#3f4d9b;stroke-width:1.8;marker-end:url(#arrow)}
+    .heading{font-family:"IBM Plex Sans","Avenir Next",sans-serif;font-size:19px;font-style:normal;font-weight:600;fill:#3f4d9b}.label{font-size:14px}.small{font-size:11.5px;fill:#667085}.mono{font-family:ui-monospace,Menlo,monospace;font-size:12px}.bold{font-weight:600}
+  </style>
+  <rect width="1100" height="350" fill="#f5f7fb"/><rect width="1100" height="350" fill="url(#dots)"/>
+  <text x="110" y="37" class="heading">open data</text>
+  <rect class="data" x="25" y="65" width="170" height="38" rx="5"/><text x="110" y="89" class="label">OpenCoder</text>
+  <rect class="data" x="25" y="115" width="170" height="38" rx="5"/><text x="110" y="139" class="label">OpenThoughts-Agent</text>
+  <rect class="data" x="25" y="165" width="170" height="38" rx="5"/><text x="110" y="189" class="label">R2E-Gym</text>
+  <rect class="box" x="25" y="235" width="170" height="48" rx="5"/><text x="110" y="255" class="label">packed sequences</text><text x="110" y="274" class="small">ChatML + EOS</text>
+  <path class="conn" d="M198 175H232"/>
+
+  <text x="330" y="37" class="heading">assistant-only labels</text>
+  <rect class="box" x="245" y="65" width="170" height="178" rx="7"/>
+  <text x="330" y="91" class="small">system / user / tool</text>
+  <path d="M265 108H395M265 124H375M265 140H388" stroke="#bdc7d6" stroke-width="7" stroke-linecap="round"/>
+  <text x="330" y="169" class="small">assistant + tool calls</text>
+  <path d="M265 187H395M265 203H365M265 219H386" stroke="#75bfa7" stroke-width="7" stroke-linecap="round"/>
+  <rect class="mask" x="260" y="260" width="140" height="30" rx="15"/><text x="330" y="280" class="label">loss on green only</text>
+  <path class="conn" d="M418 175H452"/>
+
+  <text x="550" y="37" class="heading">sample k each step</text>
+  <rect class="loop" x="475" y="70" width="68" height="48" rx="6"/><text x="509" y="100" class="label bold">k = 1</text>
+  <rect class="loop" x="557" y="70" width="68" height="48" rx="6"/><text x="591" y="100" class="label bold">k = 2</text>
+  <rect class="loop" x="475" y="135" width="68" height="48" rx="6"/><text x="509" y="165" class="label bold">k = 3</text>
+  <rect class="loop" x="557" y="135" width="68" height="48" rx="6"/><text x="591" y="165" class="label bold">k = 4</text>
+  <rect class="gate" x="475" y="216" width="150" height="36" rx="18"/><text x="550" y="239" class="label">10% forced to k = 1</text>
+  <text x="550" y="286" class="small">deterministic seeded draw</text>
+  <path class="conn" d="M638 175H672"/>
+
+  <text x="770" y="37" class="heading">TBPTL · depth 1</text>
+  <rect class="off" x="695" y="62" width="150" height="36" rx="5"/><text x="770" y="85" class="label">pass 1 · no grad</text>
+  <rect class="off" x="695" y="108" width="150" height="36" rx="5"/><text x="770" y="131" class="label">pass 2 · no grad</text>
+  <rect class="off" x="695" y="154" width="150" height="36" rx="5"/><text x="770" y="177" class="label">pass 3 · no grad</text>
+  <rect class="mask" x="695" y="200" width="150" height="42" rx="5"/><text x="770" y="226" class="label bold">pass 4 · grad</text>
+  <text x="770" y="273" class="small">loss at final pass only</text>
+  <text x="770" y="298" class="small">example: sampled k = 4</text>
+  <path class="conn" d="M858 175H892"/>
+
+  <text x="990" y="37" class="heading">one adapter · sweep k</text>
+  <rect class="gate" x="915" y="65" width="150" height="44" rx="7"/><text x="990" y="92" class="label bold">saved adapter</text>
+  <path class="conn" d="M990 110V137"/>
+  <rect class="box" x="905" y="140" width="38" height="34" rx="5"/><text x="924" y="162" class="mono">1</text>
+  <rect class="box" x="951" y="140" width="38" height="34" rx="5"/><text x="970" y="162" class="mono">2</text>
+  <rect class="box" x="997" y="140" width="38" height="34" rx="5"/><text x="1016" y="162" class="mono">3</text>
+  <rect class="box" x="1043" y="140" width="38" height="34" rx="5"/><text x="1062" y="162" class="mono">4</text>
+  <text x="990" y="208" class="small">same weights at every k</text>
+  <text x="990" y="243" class="label">28 → 44 → 60 → 76</text>
+  <text x="990" y="265" class="small">layer passes for 6 / 16 / 6</text>
+  <text x="990" y="300" class="small">compare held-out loss</text>
+</svg>

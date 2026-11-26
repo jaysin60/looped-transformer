@@ -31,6 +31,95 @@ repeatedly, so a single checkpoint can be served at different depths (`k=1,2,3,4
 Dory1.0-4B showed that this can match much larger models and reduce generated tokens.
 The open question for a small model is whether the idea survives at laptop/Colab scale.
 
+## Same weights, more steps
+
+Read the diagrams **bottom to top**. A standard transformer gives every stored layer
+one pass. A looped transformer sends the state through a shared middle block again.
+The animated, clickable version lives in
+[`docs/visual_transformer_vs_loop.html`](docs/visual_transformer_vs_loop.html).
+
+<p align="center">
+  <img alt="Standard Transformer: 28 distinct decoder layers, each run once" src="docs/diagrams/standard_transformer.svg" width="270"/>
+  <img alt="This repo: 6 input layers, a shared 16-layer recurrent block, and 6 output layers" src="docs/diagrams/loop_transformer.svg" width="270"/>
+  <img alt="GLM 5.4: 26 prelude layers, 28 shared layers run twice, and 24 coda layers" src="docs/diagrams/glm54.svg" width="270"/>
+</p>
+
+- **Standard Transformer** — `N` distinct layers means `N` layer passes.
+- **This repo** — the 28-layer Qwen stack is partitioned **6 / 16 / 6**. The middle
+  16 layers are the same module on every pass, so `k=1,2,3,4` gives
+  **28 / 44 / 60 / 76 layer passes** without adding stored decoder layers.
+- **GLM 5.4** (Z.ai) — 26 + 28 + 28 + 24 = **106 layer passes from 78 stored layers**.
+  Its recurrence and cache system are different from this repo's; see the comparison below.
+
+### Inside each decoder layer: nothing changes
+
+Every decoder layer—whether run once or reused—keeps its ordinary pre-norm residual
+structure. The experiment does **not** put a new gate on attention or MLP residuals.
+
+<p align="center">
+  <img alt="A standard pre-norm decoder layer: attention and MLP, each with an ordinary residual add" src="docs/diagrams/layer_standard.svg" width="430"/>
+</p>
+
+- **Norm** — RMSNorm before each sub-block.
+- **Attention** — causal self-attention with the base model's projections and RoPE.
+- **MLP** — the base model's SwiGLU feed-forward network.
+- **Residuals** — `x ← x + attn(norm(x))`, then `x ← x + mlp(norm(x))`.
+
+### Outside the block: the recurrence changes
+
+Let `F` be the **entire shared 16-layer block**, not one decoder layer. The reported
+runs disable input injection and use this base-preserving recurrence:
+
+<p align="center">
+  <img alt="Pass one computes s1 equals F of x. Later passes compute delta with F of RMSNorm of the previous state, scale delta by one scalar gate, and add it to the previous state." src="docs/diagrams/layer_recurrent.svg" width="850"/>
+</p>
+
+```text
+pass 1:        s₁ = F(x)
+passes 2…k:    δₜ = F(RMSNorm(sₜ₋₁))
+               sₜ = sₜ₋₁ + g · δₜ
+```
+
+- At initialization, pass 1 is the untouched pretrained computation, so **`k=1`
+  matches the base model** (verified loss difference about `1e-6`).
+- `g` is **one learned scalar outside the whole recurrent block**. It starts at zero,
+  so extra passes also start as no-ops. It is not a per-token gate.
+- After adaptation begins, `k=1` is the same trained checkpoint with one pass—not the
+  original pretrained checkpoint—because LoRA and the loop-boundary parameters train.
+- `inject_input=True` (the constructor default) enables the separate Dory-style ablation
+  `δₜ = F(RMSNorm(sₜ₋₁ + x))`. The reported runs turn it off with `--no-inject-input`.
+
+### What the experiment looks like end to end
+
+<p align="center">
+  <img alt="Experiment pipeline: open coding and agentic data, assistant-only labels, sampled loop counts with a ten percent k equals one override, truncated backpropagation through only the last pass, and evaluation of one adapter at k equals one through four" src="docs/diagrams/experiment_pipeline.svg" width="1000"/>
+</p>
+
+For a sampled `k=4` training step, passes 1–3 run under `no_grad`; only pass 4 is
+differentiated (**TBPTL depth 1**), and loss is computed only at the final pass.
+The trainer's default LoRA adapters target attention and MLP projections in all three
+partitions; the pretrained linear weights stay frozen, while the loop norms and gate
+remain trainable. Evaluation then sweeps `k` on the **same saved adapter**.
+
+<small>Diagram layout and animation concepts adapted from <a href="https://www.k-a.in/loop-transformer.html">arjun kocher’s Loop Transformer</a>, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Typography, palette, SVGs, and explanations are independently reworked for this repository.</small>
+
+### What GLM 5.4 does (per the Z.ai launch blog, 2026-11-23)
+
+- First Z.ai flagship built on the **Loop Transformer** — ~750B parameters, comparable to 2T–3T models, targeting "Generalized Coding".
+- Loops 28 layers twice (see diagram above): 26 prelude + 28 + 28 + 24 = **106 layer passes per token from 78 stored layers**.
+- **Gated Progressive Updates** — `x₁ = x₀ + β₁(h₁ − x₀)`: per-token, per-iteration gates write candidate updates back proportionally. Pass 1 writes conservatively; pass 2 opens the gates.
+- **Hybrid KV cache** — reuses pass 1's sparse KV and adds only a 128-token sliding window per extra loop (≈ one window of KV, not a full context — matters at 1M context).
+- **Sparse attention index reuse** — pass 2 reuses pass 1's attention indices (≈ zero indexing overhead).
+- Iso-parameter ablation (30B vs 750B) shows clear gains on long reasoning; average thinking length drops 10–14%.
+
+### This repo vs GLM 5.4
+
+| | This repo | GLM 5.4 |
+| --- | --- | --- |
+| Base | upcycle Qwen2.5-Coder-1.5B | continued-train 750B base |
+| Recurrence | base-preserving gated residual; `k ∈ {1..4}` | loop 28 layers ×2; per-token gates |
+| Extras | TBPTL depth 1; LoRA r=16 smoke runs / r=32 planned L4 | hybrid KV + sparse index reuse |
+
 ## Architecture
 
 ```
@@ -38,10 +127,10 @@ tokens ─► embed ─► [ input block ×6 ] ─► x
                                          │
                 ┌────────────────────────┘
                 ▼
-        s = recurrent_block(x)          # loop 1: the untouched pretrained stack
+        s = recurrent_block(x)          # loop 1: base-preserving passthrough
         for t in 2..k:
             d = recurrent_block(norm(s))
-            s = s + gate · d            # gate init 0 → loop starts as a no-op
+            s = s + gate · d            # one scalar gate, outside all 16 layers
                 │
                 ▼
         [ output block ×6 ] ─► norm ─► lm_head ─► logits
@@ -56,15 +145,21 @@ The paper's exact recurrence (`u = N(s + x)`, `s = N(F(u))`) is a poor initializ
 for a **pretrained** model: it makes `k=1` differ from the base. Instead we use a
 **base-preserving gated residual**:
 
-- loop 1 is the original pretrained stack, so **`k=1` is numerically identical to the
-  base model** (verified: loss diff `1e-6`);
+- loop 1 is the original pretrained stack, so **at initialization `k=1` is numerically
+  identical to the base model** (verified: loss diff `1e-6`);
 - later loops add a learned, gated refinement `s = s + gate · F(norm(s))`;
 - `gate` starts at 0, so `k>1` starts identical to `k=1` and learns how much the loop
   should contribute.
 
-## Results (0.5B, LoRA, ~1.6M tokens, Mac M6)
+## Results (0.5B LoRA smoke runs, Mac M6)
 
-`k=1` is exactly the pretrained model. Negative Δ means the loop helps.
+The main 5/14/5 run used **200 micro-batches × batch 1 × 2,048 tokens = 409,600
+raw token presentations** and 50 optimizer updates. The 120-micro-batch ablations used
+245,760 token presentations and 30 updates. In-training evaluation points average only
+**8 held-out sequences**; the final 5/14/5 evaluation below uses 4.
+
+At initialization, `k=1` matches the pretrained base; in these trained-adapter sweeps,
+`k=1` means one pass through the adapted checkpoint. Negative Δ means the loop helps.
 
 ![k-sweep and gate](results/k_sweep.png)
 
@@ -79,8 +174,8 @@ k=4 `1.0696`.
 **Interpretation.** The loop gives a ~`1e-3` gain at `k=2`, and deeper loops do not
 help at this budget. A forced gate init of `0.05` is actively harmful — the optimizer
 drives it down to `0.019` and k=1 wins. This is a pipeline validation, not a verdict on
-the architecture: Dory used **1.5T looped tokens**, while this run uses ~1.6M. The
-1.5B / ~16M-token Colab run is the next step.
+the architecture: Dory used **1.5T looped tokens**, while the main run presents only
+~0.41M tokens. The 1.5B / ~16M-token-presentation Colab run is the next step.
 
 ## Quick start
 
@@ -148,6 +243,9 @@ results/
   RUN_LOG.md      # full experiment log
   k_sweep.png     # results figure
   logs/           # committed eval/train JSONL used by the figure
+docs/
+  visual_transformer_vs_loop.html   # interactive architecture + experiment explainer
+  diagrams/                         # standalone SVG figures used by this README
 PLAN_looped_transformer_colab.md
 ```
 
@@ -166,10 +264,11 @@ system/tool messages are capped so assistant turns survive truncation.
 ## What I learned
 
 - **Upcycling needs a base-preserving init.** The exact Dory recurrence is a poor
-  starting point for a pretrained model; the gated residual makes k=1 exact and lets
-  the loop start as a no-op.
-- **The loop is compute-hungry.** 1.6M tokens of LoRA adaptation is nowhere near the
-  paper's 1.5T looped tokens. At this budget the gate stays near zero.
+  starting point for a pretrained model; the gated residual makes k=1 exact at
+  initialization and lets the loop start as a no-op.
+- **The loop is compute-hungry.** The main run's 0.41M token presentations of LoRA
+  adaptation are nowhere near the paper's 1.5T looped tokens. At this budget the gate
+  stays near zero.
 - **Engineering matters.** TBPTL depth 1, packed assistant-only labels, gradient
   checkpointing, and adapter round-tripping are what make the experiment run at all.
 
@@ -178,7 +277,7 @@ system/tool messages are capped so assistant turns survive truncation.
 - 1.5B / ~16M-token L4 run (notebook ready).
 - Per-source eval: coding vs. agentic, since loops should help hard reasoning more.
 - Difficulty-aware loop routing (the paper's `α=0.3` curriculum).
-- `--inject-input` (Dory-style) and full fine-tune / higher-rank LoRA ablations.
+- Input injection (`inject_input=True`, Dory-style) and full fine-tune / higher-rank LoRA ablations.
 - A non-looped LoRA baseline at the same budget.
 
 ## References
